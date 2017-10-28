@@ -64,7 +64,7 @@
      (-> db
          (sign-up-events/sign-up (:phone params) id)
          (as-> fx
-             (assoc fx :dispatch-n [(:dispatch fx)]))
+               (assoc fx :dispatch-n [(:dispatch fx)]))
          (dissoc :dispatch)))
 
    "confirmation-code"
@@ -87,20 +87,22 @@
                                              (i18n/label :t/faucet-error)))}}))
 
    "debug"
-   (fn [{:keys [random-id] :as cofx} {:keys [params id]}]
-     (let [debug? (= "On" (:mode params))
-           fx (accounts-events/account-update cofx {:debug? debug?})]
-       (assoc fx :dispatch-n (if debug?
-                               [[:debug-server-start]
-                                [:received-message
-                                 {:message-id   random-id
-                                  :content      (i18n/label :t/debug-enabled)
-                                  :content-type const/text-content-type
-                                  :outgoing     false
-                                  :chat-id      const/console-chat-id
-                                  :from         const/console-chat-id
-                                  :to           "me"}]]
-                               [[:debug-server-stop]]))))})
+   (fn [{:keys [db random-id now] :as cofx} {:keys [params id]}]
+     (let [debug? (= "On" (:mode params))]
+       (-> {:db db}
+           (accounts-events/account-update {:debug?       debug?
+                                            :last-updated now})
+           (assoc :dispatch-n (if debug?
+                                [[:debug-server-start]
+                                 [:received-message
+                                  {:message-id   random-id
+                                   :content      (i18n/label :t/debug-enabled)
+                                   :content-type const/text-content-type
+                                   :outgoing     false
+                                   :chat-id      const/console-chat-id
+                                   :from         const/console-chat-id
+                                   :to           "me"}]]
+                                [[:debug-server-stop]])))))})
 
 (def commands-names (set (keys console-commands->fx)))
 
